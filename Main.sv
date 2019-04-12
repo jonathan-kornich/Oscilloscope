@@ -47,6 +47,36 @@ module Trigger#(parameter WIDTH = 8) (
     
 endmodule
 
+module FakeADC(
+    input  logic       i_clk,
+    input  logic [9:0] i_fake_in,
+    output logic [9:0] o_out
+    );
+    always @ (posedge i_clk)
+            o_out <= i_fake_in;
+endmodule
+
+module ShiftRegister#(parameter SIZE = 8, DATA_WIDTH = 1) (
+    input  logic                  i_clk,
+    input  logic                  i_push,
+    input  logic [DATA_WIDTH-1:0] i_data,
+    output logic [DATA_WIDTH-1:0] o_data [0:SIZE-1]
+    );
+    always @ (posedge i_clk) begin
+        if (i_push) begin
+            o_data[1:SIZE-1] <= o_data[0:SIZE-2];
+            o_data[0] <= i_data;
+        end
+    end
+endmodule
+
+module DataToPixel(
+    input  logic [9:0] i_data,
+    output logic [8:0] o_pixel
+    );
+    assign o_pixel = 480 - (i_data*480)/1024;
+endmodule
+
 module Main(
     input  logic       CLK100MHZ,
     
@@ -59,6 +89,29 @@ module Main(
     input  logic       BTNC, BTNU, BTNL, BTNR, BTND,
     output logic [15:0] LED,
     input  logic [15:0] SW
+    );
+    
+    logic [9:0] latest_value;
+    FakeADC(
+        .i_clk(CLK100MHZ),
+        .i_fake_in(SW[9:0]),
+        .o_out(latest_value)
+    );
+//    logic [8:0] lvy = 480 - (latest_value*480)/1024;
+//    assign LED[8:0] = lvy;
+    
+    logic shift_register_clk;
+    ClockDivisor#(22)(
+        .i_clk(CLK100MHZ),
+        .o_clk(shift_register_clk)
+    );
+    
+    logic [9:0] values [0:639];
+    ShiftRegister#(640, 10)(
+        .i_clk(shift_register_clk),
+        .i_push(1'b1),
+        .i_data(latest_value),
+        .o_data(values)
     );
     
     logic input_clk;
@@ -119,10 +172,14 @@ module Main(
     logic [2:0] color;
     logic [2:0] sketch_color;
     logic [2:0] trigger_color = 3'b110;
-    assign color = trigger ? trigger_color : sketch_color;
     
+    logic [8:0] signal_pixel;
+    DataToPixel(.i_data(values[vga_x]), .o_pixel(signal_pixel));
     
-
+    logic [2:0] signal_color  = (vga_y==signal_pixel) ? 3'b011 : 3'b000;
+//    assign color = trigger ? trigger_color : sketch_color;
+    assign color = signal_color;
+    
     RAM#(19, 3, 2**19)(
         .i_clk(CLK100MHZ),
         
@@ -154,6 +211,4 @@ module Main(
         .o_vga_b(VGA_B)
     );
     
-    
-
 endmodule
