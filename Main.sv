@@ -18,14 +18,13 @@ module Main(
     );
     
     logic adc_clk;
-    logic [9:0] data0;
-    logic [9:0] data1;
-    
     ClockDivisor#(9)(
         .i_clk(CLK100MHZ),
         .o_clk(adc_clk)
     );
     
+    logic [9:0] data0;
+    logic [9:0] data1;
     ADC(
         .p_clk(JA1_CLK),
         .p_cs(JA2_CS),
@@ -37,7 +36,7 @@ module Main(
         .o_data1(data1)
     );
     
-    assign LED[9:0] = data1;
+//    assign LED[9:0] = data1;
     
     logic shift_register_clk;
     ClockDivisor#(22)(
@@ -45,25 +44,37 @@ module Main(
         .o_clk(shift_register_clk)
     );
     
-    logic [9:0] values [0:639];
+    logic [9:0] values0 [0:639];
     ShiftRegister#(640, 10)(
         .i_clk(shift_register_clk),
         .i_push(1'b1),
         .i_data(data0),
-        .o_data(values)
+        .o_data(values0)
     );
+    
+    logic [9:0] values1 [0:639];
+    ShiftRegister#(640, 10)(
+        .i_clk(shift_register_clk),
+        .i_push(1'b1),
+        .i_data(data1),
+        .o_data(values1)
+    );
+    
+    
     
     logic [9:0] vga_x;
     logic [8:0] vga_y;
     
+    logic [8:0] signal0_y;
+    DataToPixel(.i_data(values0[vga_x]), .o_pixel(signal0_y));
+    logic [2:0] signal0_color = (vga_y==signal0_y) ? 3'b011 : 3'b000;
+    
+    logic [8:0] signal1_y;
+    DataToPixel(.i_data(values1[vga_x]), .o_pixel(signal1_y));
+    logic [2:0] signal1_color  = (vga_y==signal1_y) ? 3'b110 : 3'b000;
+    
     logic [2:0] color;
-    
-    logic [8:0] signal_pixel;
-    DataToPixel(.i_data(values[vga_x]), .o_pixel(signal_pixel));
-    
-    logic [2:0] signal_color  = (vga_y==signal_pixel) ? 3'b011 : 3'b000;
-    
-    assign color = signal_color;
+    assign color = signal0_color | signal1_color;
     
     logic clk25mhz;
     ClockDivisor#(2)(
