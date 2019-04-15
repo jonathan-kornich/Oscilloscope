@@ -1,5 +1,11 @@
 
-module RAM #(parameter ADDR_WIDTH = 8, DATA_WIDTH = 8, DEPTH = 256) (
+// Stores data.
+module RAM
+    #(parameter
+    ADDR_WIDTH = 8,
+    DATA_WIDTH = 8,
+    DEPTH = 256
+    ) (
     input  logic                  i_clk,
     input  logic [ADDR_WIDTH-1:0] i_addr,
     input  logic [ADDR_WIDTH-1:0] o_addr,

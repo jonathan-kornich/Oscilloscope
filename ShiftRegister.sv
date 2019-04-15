@@ -1,5 +1,9 @@
 
-module ShiftRegister#(parameter SIZE = 8, DATA_WIDTH = 1) (
+//
+module ShiftRegister#(
+    parameter SIZE = 8,
+    DATA_WIDTH = 1
+    ) (
     input  logic                  i_clk,
     input  logic                  i_push,
     input  logic [DATA_WIDTH-1:0] i_data,

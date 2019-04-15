@@ -1,14 +1,4 @@
 
-module FakeADC(
-    input  logic       i_clk,
-    input  logic [9:0] i_fake_in,
-    output logic [9:0] o_out
-    );
-    always @ (posedge i_clk)
-            o_out <= i_fake_in;
-endmodule
-
-
 module ADC(
     output logic p_clk,
     output logic p_cs,
@@ -16,11 +6,16 @@ module ADC(
     input  logic p_out,
     
     input  logic       i_clk,
-    output logic [9:0] o_data,
+    output logic [9:0] o_data0,
+    output logic [9:0] o_data1,
     output logic       o_done
     );
     
     assign p_clk = i_clk;
+    
+    logic channel;
+
+    logic [0:3] code = {2'b11, channel, 1'b1};
     
     logic [4:0] counter;
     
@@ -36,10 +31,15 @@ module ADC(
             p_cs <= 1'b0;
     end
     
+    always @ (negedge i_clk) begin
+        if (counter == 31)
+            channel <= ~channel;
+    end
+    
     
     always @ (negedge i_clk) begin
         if (counter < 4)
-            p_in <= 1'b1;
+            p_in <= code[counter];
         else
             p_in <= 1'b0;
     end
@@ -56,7 +56,10 @@ module ADC(
     
     always @ (negedge i_clk) begin
         if (counter == 15) begin
-            o_data <= data;
+            if (channel == 0)
+                o_data0 <= data;
+            else
+                o_data1 <= data;
             o_done <= 1'b1;
         end
     end
