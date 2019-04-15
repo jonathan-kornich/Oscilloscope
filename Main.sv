@@ -11,17 +11,44 @@ module Main(
 
     input  logic       BTNC, BTNU, BTNL, BTNR, BTND,
     output logic [15:0] LED,
-    input  logic [15:0] SW
+    input  logic [15:0] SW,
+    
+    output logic JA1_CLK, JA2_CS, JA3_IN,
+    input  logic JA4_OUT
     );
     
-    logic [9:0] latest_value;
-    FakeADC(
+    logic adc_clk;
+    logic [9:0] adc_data;
+    
+    ClockDivisor#(9)(
         .i_clk(CLK100MHZ),
-        .i_fake_in(SW[9:0]),
-        .o_out(latest_value)
+        .o_clk(adc_clk)
     );
-//    logic [8:0] lvy = 480 - (latest_value*480)/1024;
-//    assign LED[8:0] = lvy;
+    
+    ADC(
+        .p_clk(JA1_CLK),
+        .p_cs(JA2_CS),
+        .p_in(JA3_IN),
+        .p_out(JA4_OUT),
+        
+        .i_clk(adc_clk),
+        .o_data(adc_data)
+    );
+    
+    assign LED[9:0] = adc_data;
+    
+///////////////////////////////////////////////////////////////////////////
+    
+    
+    
+//    logic [9:0] latest_value;
+//    FakeADC(
+//        .i_clk(CLK100MHZ),
+//        .i_fake_in(SW[9:0]),
+//        .o_out(latest_value)
+//    );
+////    logic [8:0] lvy = 480 - (latest_value*480)/1024;
+////    assign LED[8:0] = lvy;
     
     logic shift_register_clk;
     ClockDivisor#(22)(
@@ -33,7 +60,7 @@ module Main(
     ShiftRegister#(640, 10)(
         .i_clk(shift_register_clk),
         .i_push(1'b1),
-        .i_data(latest_value),
+        .i_data(adc_data),
         .o_data(values)
     );
     
