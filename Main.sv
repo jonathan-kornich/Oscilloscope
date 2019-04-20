@@ -1,5 +1,3 @@
-
-
 module Main(
     input  logic       CLK100MHZ,
     
@@ -14,8 +12,21 @@ module Main(
     input  logic [15:0] SW,
     
     output logic JA1_CLK, JA2_CS, JA3_IN,
-    input  logic JA4_OUT
+    input  logic JA4_OUT,
+    
+    output  logic CA, CB, CC, CD, CE, CF, CG, DP,
+    output  logic [7:0] AN
     );
+    
+//    SevenSegmentDisplay(
+//        .i_number(SW[15:12]),
+//        .i_dot(SW[11]),
+//        .i_enable(SW[7:0]),
+//        .p_cathodes({CA, CB, CC, CD, CE, CF, CG, DP}),
+//        .p_anodes(AN)
+//    );
+
+
     
     logic adc_clk;
     ClockDivisor#(9)(
@@ -36,10 +47,9 @@ module Main(
         .o_data1(data1)
     );
     
-//    assign LED[9:0] = data1;
     
     logic shift_register_clk;
-    ClockDivisor#(22)(
+    ClockDivisor#(20)(
         .i_clk(CLK100MHZ),
         .o_clk(shift_register_clk)
     );
@@ -59,8 +69,6 @@ module Main(
         .i_data(data1),
         .o_data(values1)
     );
-    
-    
     
     logic [9:0] vga_x;
     logic [8:0] vga_y;
@@ -95,6 +103,40 @@ module Main(
         .o_vga_r(VGA_R),
         .o_vga_g(VGA_G),
         .o_vga_b(VGA_B)
+    );
+    
+    logic [3:0] numbers[0:7];
+    logic dots[0:7];
+    
+    logic [5:0] voltage0 = (data0*33)/1024;
+    logic [5:0] voltage1 = (data1*33)/1024;
+    
+    assign numbers[7] = 4'hC;
+    assign numbers[6] = 4'h1;
+    assign numbers[5] = voltage0/10;//data0[9:6];//SW[15:12];
+    assign numbers[4] = voltage0%10;//data0[5:2];//SW[11:8];
+    assign numbers[3] = 4'hC;
+    assign numbers[2] = 4'h2;
+    assign numbers[1] = voltage1/10;//data1[9:6];//SW[7:4];
+    assign numbers[0] = voltage1%10;//data1[5:2];//SW[3:0];
+    
+    assign dots[7] = 0;
+    assign dots[6] = 0;
+    assign dots[5] = 1;
+    assign dots[4] = 0;
+    assign dots[3] = 0;
+    assign dots[2] = 0;
+    assign dots[1] = 1;
+    assign dots[0] = 0;
+    
+    
+    MultipleSevenSegmentDisplays(
+        .i_clk(adc_clk),
+        .i_numbers(numbers),
+        .i_dots(dots),
+//        .i_enable(SW[7:0]),
+        .p_cathodes({CA, CB, CC, CD, CE, CF, CG, DP}),
+        .p_anodes(AN)
     );
     
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
