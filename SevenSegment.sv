@@ -63,3 +63,31 @@ module MultipleSevenSegmentDisplays(
         .p_anodes(p_anodes)
     );
 endmodule
+
+module VoltageToSevenSegment(
+    input  logic [9:0] reading1,
+    input  logic [9:0] reading2,
+    output logic [3:0] numbers[0:7],
+    output logic dots[0:7]
+    );
+    logic [5:0] voltage1 = (reading1*33)/1024;
+    logic [5:0] voltage2 = (reading2*33)/1024;
+    
+    assign numbers[7] = 4'hC;
+    assign numbers[6] = 4'h1;
+    assign numbers[5] = voltage1/10;
+    assign numbers[4] = voltage1%10;
+    assign numbers[3] = 4'hC;
+    assign numbers[2] = 4'h2;
+    assign numbers[1] = voltage2/10;
+    assign numbers[0] = voltage2%10;
+    
+    assign dots[7] = 0;
+    assign dots[6] = 0;
+    assign dots[5] = 1;
+    assign dots[4] = 0;
+    assign dots[3] = 0;
+    assign dots[2] = 0;
+    assign dots[1] = 1;
+    assign dots[0] = 0;
+endmodule

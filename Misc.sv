@@ -37,9 +37,42 @@ module Trigger#(parameter WIDTH = 8) (
     
 endmodule
 
-module DataToPixel(
+module AnalogDataToPixel(
     input  logic [9:0] i_data,
     output logic [8:0] o_pixel
     );
     assign o_pixel = 480 - (i_data*480)/1024;
+endmodule
+
+module DigitalDataToPixel
+    #(parameter Y, HEIGHT)
+    (
+    input  logic i_data,
+    output logic [8:0] o_pixel
+    );
+    assign o_pixel = i_data ? (Y-HEIGHT) : (Y);
+endmodule
+
+module Color_AnalogSignal(
+    input  logic [9:0]  i_data[0:639],
+    input  logic [11:0] i_color,
+    input  logic [9:0]  i_vga_x,
+    input  logic [8:0]  i_vga_y,
+    output logic [11:0] o_color
+    );
+    logic [8:0] y;
+    AnalogDataToPixel(.i_data(i_data[i_vga_x]), .o_pixel(y));
+    assign o_color = (i_vga_y==y) ? i_color : 12'h000;
+endmodule
+
+module Color_DigitalSignal#(parameter Y, HEIGHT)(
+    input  logic        i_data[0:639],
+    input  logic [11:0] i_color,
+    input  logic [9:0]  i_vga_x,
+    input  logic [8:0]  i_vga_y,
+    output logic [11:0] o_color
+    );
+    logic [8:0] y;
+    DigitalDataToPixel#(Y, HEIGHT)(.i_data(i_data[i_vga_x]), .o_pixel(y));
+    assign o_color = (i_vga_y==y) ? i_color : 12'h000;
 endmodule
